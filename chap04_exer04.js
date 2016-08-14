@@ -84,6 +84,26 @@ console.log(prepend(10, prepend(20, null)));
 //→ {value: 10, rest: {value: 20, rest: null}}
 
 
+// ADD ELEMENT AT THE END OF THE LIST
+function append(elem, list) {
+  if (list == null) {
+    list = {value:elem, rest:null};
+  } else {
+    for (var node = list; node != null; node = node.rest) {
+      if (node.rest == null) {
+        node.rest = {value:elem, rest:null};
+        break; // without the break, we'll be in an infinite loop
+      }
+    }
+  }
+  
+  return list;
+}
+
+console.log(append(2, append(1, null)));
+//→ {value: 1, rest: {value: 2, rest: null}}
+
+
 // GET THE NTH ELEMENT OF THE LIST
 //function nth(list, pos) {
 //  var elem = undefined;
