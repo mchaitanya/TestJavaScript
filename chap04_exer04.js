@@ -6,62 +6,85 @@
  * 
  */
 
+// WHAT'S THE SPEC?
+// it's much better to let [] -> {} rather than [] -> null; 
+// otherwise must listToArray(null) must give back []; then what about listToArray({})??
+//   any null input must raise something like a NullPointerException or result in null output
+
+// this reads better - the check for the end of the list becomes ("value" in list)
+// also takes advantage of JS features like adding fields to objects, checking if fields exist etc.
+// in Java, you can't have an empty object of a certain type
+//   nulls are required to signify the object's "emptiness"
+
 // ARRAY TO LIST
-//function arrayToList(array) {
-//	var list = {};
-//	for (var i = 0, node = list; ; i++, node = node.rest) {
-//		node.value = array[i];
-//		if (i == array.length-1) { // on last element
-//			node.rest = null;
-//			break;
-//		} else {
-//			node.rest = {};
-//		}
-//	}
-//
-//	return list;
-//}
+function arrayToList(array) {
+  var list = {};
+  for (var i = 0, node = list; i < array.length; i++, node = node.rest) {
+    node.value = array[i];
+    node.rest = {};
+  }
+
+  return list;
+}
 
 //recursive
-function arrayToList(array) {
-var list = {};
-// you can recursively process sub-arrays that get smaller with every pass
-function convert(array, list) {
-  if (array.length > 0) {
-    list.value = array[0];
-    if (array.length > 1) {
+function arrayToList2(array) {
+//you can recursively process sub-arrays that get smaller with every pass
+  function convert(array, list) {
+    if (array.length > 0) {
+      list.value = array[0];
       list.rest = {};
       convert(array.slice(1), list.rest); // recursion
-    } else {
-      list.rest = null;
     }
   }
-}
-convert(array, list);
 
-return list;
+  var list = {};
+  convert(array, list);
+
+  return list;
 }
 
-console.log(arrayToList([10, 20]));
-//→ {value: 10, rest: {value: 20, rest: null}}
+// another recursive implementation - more concise, no sub-function
+function arrayToList3(array) {
+  if (array.length == 0) {
+    return {};
+  } else {
+    return {value : array[0], rest : arrayToList2(array.slice(1))};
+  }
+}
+
+// start from the end of the array
+function arrayToList4(array) {
+  var list = {};
+  for (var i = array.length-1; i >= 0; i--) {
+    list = {value:array[i], rest:list}; // this is like a = a+2
+  }
+  
+  return list;
+}
+
+//console.log(arrayToList([10, 20, 30]));
+//→ {value: 10, rest: {value: 20, rest: {}}}
 
 
 // LIST TO ARRAY
-//function listToArray(list) {
-//  var array = [];
-//  for (var node = list; node != null; node = node.rest) {
-//    array.push(node.value);
-//  }
-//
-//  return array;
-//}
+function listToArray(list) {
+  var array = [];
+  for (var node = list; "value" in node; node = node.rest) {
+    array.push(node.value);
+  }
+
+  return array;
+}
 
 //recursive
-function listToArray(list) {
+function listToArray2(list) {
   var array = [];
   // you can recursively process the tail of sub-lists that get smaller with every pass
   function convert(list) {
-    if (list != null) {
+    // if list is null, then we'll get the Exception: ReferenceError: value is not defined
+    // that's all right, the function has the right to assume list is non-null
+    if ("value" in list) {
       array.push(list.value);
       convert(list.rest); // recursion
     }
@@ -71,7 +94,7 @@ function listToArray(list) {
   return array;
 }
 
-console.log(listToArray(arrayToList([10, 20, 30])));
+//console.log(listToArray2(arrayToList([10, 20, 30])));
 //→ [10, 20, 30]
 
 
@@ -80,53 +103,48 @@ function prepend(elem, list) {
   return {value: elem, rest: list};
 }
 
-console.log(prepend(10, prepend(20, null)));
+//console.log(prepend(10, prepend(20, null)));
 //→ {value: 10, rest: {value: 20, rest: null}}
 
 
 // ADD ELEMENT AT THE END OF THE LIST
 function append(elem, list) {
-  if (list == null) {
-    list = {value:elem, rest:null};
-  } else {
-    for (var node = list; node != null; node = node.rest) {
-      if (node.rest == null) {
-        node.rest = {value:elem, rest:null};
-        break; // without the break, we'll be in an infinite loop
-      }
+  for (var node = list; ; node = node.rest) {
+    if (!("value" in node)) {
+      node.value = elem;
+      node.rest = {};
+      break; // without the break, we'll be in an infinite loop
     }
   }
   
   return list;
 }
 
-console.log(append(2, append(1, null)));
-//→ {value: 1, rest: {value: 2, rest: null}}
+//console.log(append(2, append(1, {})));
+//→ {value: 1, rest: {value: 2, rest: {}}}
 
 
 // GET THE NTH ELEMENT OF THE LIST
-//function nth(list, pos) {
-//  var elem = undefined;
-//  for (var i = 0, node = list; node != null ; i++, node = node.rest) {
-//    if (i == pos) {
-//      elem = node.value;
-//      break;
-//    }
-//  }
-//
-//  return elem;
-//}
+function nth(list, pos) {
+  for (var i = 0, node = list; "value" in node ; i++, node = node.rest) {
+    if (i == pos) {
+      return node.value;
+    }
+  }
+
+  return undefined;
+}
 
 //recursive
-function nth(list, pos) {
-if (list == null) 
+function nth2(list, pos) {
+if (!("value" in list)) 
   return undefined;
 else if (pos == 0)
   return list.value;
 else 
-  return nth(list.rest, pos-1);
+  return nth2(list.rest, pos-1);
 }
 
-console.log(nth(arrayToList([10, 20, 30]), 1));
+console.log(nth2(arrayToList([10, 20, 30]), 1));
 //→ 20
 
